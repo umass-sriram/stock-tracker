@@ -23,17 +23,17 @@ function App() {
   const logout = () => {
     localStorage.removeItem("id_token");
     const logoutUrl =
-      `https://us-east-2ffnvtooil.auth.us-east-2.amazoncognito.com/logout` +
-      `?client_id=1c5q0l5q7mrksqofaeq39j3ukh` +
+      `https://us-east-1_zxEXADgC5.auth.us-east-1.amazoncognito.com/logout` +
+      `?client_id=411p65nnq24h8oerja7ncmuphs` +
       `&redirect_uri=http://localhost:3000/&response_type=token&scope=email+openid+phone`;
     window.location.href = logoutUrl;
   };
 
   const login = () => {
     window.location.href =
-      "https://us-east-2ffnvtooil.auth.us-east-2.amazoncognito.com/login" +
+      "https://us-east-1_zxEXADgC5.auth.us-east-1.amazoncognito.com/login" +
       "?response_type=token" +
-      "&client_id=1c5q0l5q7mrksqofaeq39j3ukh" +
+      "&client_id=411p65nnq24h8oerja7ncmuphs" +
       "&redirect_uri=http://localhost:3000/" +
       "&scope=email+openid+phone";
   };

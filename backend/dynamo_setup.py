@@ -1,7 +1,7 @@
 import boto3
 from botocore.exceptions import ClientError
 
-dynamodb = boto3.resource("dynamodb", region_name="us-east-2")
+dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
 
 TABLE_NAME = "UserPortfolios"
 

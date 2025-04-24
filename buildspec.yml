@@ -1,0 +1,39 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+      python: 3.11
+    commands:
+      - echo "Installing dependencies for frontend and backend"
+
+  build:
+    commands:
+      # Frontend Build
+      - echo "Building React frontend"
+      - cd frontend
+      - npm install
+      - npm run build
+      - cd ..
+
+  post_build:
+    commands:
+      # Frontend Deploy to S3
+      - echo "Deploying frontend to S3"
+      - aws s3 sync frontend/build/ s3://stockbrokerapp --delete
+
+      # Backend Deploy to EC2
+      - echo "Deploying Flask backend to EC2"
+      - |
+        ssh -o StrictHostKeyChecking=no ec2-user@YOUR_EC2_PUBLIC_DNS << 'EOF'
+        cd /home/ec2-user/stock-backend
+        git pull origin main
+        source venv/bin/activate
+        pip install -r requirements.txt
+        sudo systemctl restart flaskapp
+        EOF
+
+artifacts:
+  files:
+    - '**/*'

@@ -13,8 +13,8 @@ portfolio_table = dynamodb.Table('UserPortfolios')
 app = Flask(__name__)
 CORS(app)
 
-COGNITO_REGION = "us-east-2"
-USER_POOL_ID = "us-east-2_FFNVTOOiL"
+COGNITO_REGION = "us-east-1"
+USER_POOL_ID = "us-east-1_zxEXADgC5"
 COGNITO_ISSUER = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{USER_POOL_ID}"
 JWKS_URL = f"{COGNITO_ISSUER}/.well-known/jwks.json"
 JWKS = requests.get(JWKS_URL).json()
@@ -37,7 +37,7 @@ def verify_token(request):
         token,
         key,
         algorithms=["RS256"],
-        audience="1c5q0l5q7mrksqofaeq39j3ukh",
+        audience="411p65nnq24h8oerja7ncmuphs",
         issuer=COGNITO_ISSUER,
         options={"verify_at_hash": False}
     )
