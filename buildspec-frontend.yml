@@ -11,7 +11,7 @@ phases:
       - npm run build
   post_build:
     commands:
-      - aws s3 sync build/ s3://stockbrokerapp --delete
+      - aws s3 sync build/ s3://stocktrackerappartifact --delete
 artifacts:
   files:
     - '**/*'
