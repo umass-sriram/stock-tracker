@@ -25,7 +25,7 @@ function App() {
     const logoutUrl =
       `https://us-east-1_zxEXADgC5.auth.us-east-1.amazoncognito.com/logout` +
       `?client_id=411p65nnq24h8oerja7ncmuphs` +
-      `&redirect_uri=http://localhost:3000/&response_type=token&scope=email+openid+phone`;
+      `&redirect_uri=https://demostocktracker.com/&response_type=token&scope=email+openid+phone`;
     window.location.href = logoutUrl;
   };
 
@@ -34,7 +34,7 @@ function App() {
       "https://us-east-1_zxEXADgC5.auth.us-east-1.amazoncognito.com/login" +
       "?response_type=token" +
       "&client_id=411p65nnq24h8oerja7ncmuphs" +
-      "&redirect_uri=http://localhost:3000/" +
+      "&redirect_uri=https://demostocktracker.com/" +
       "&scope=email+openid+phone";
   };
 
