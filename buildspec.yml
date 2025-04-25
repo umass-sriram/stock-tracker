@@ -21,7 +21,7 @@ phases:
     commands:
       # Frontend Deploy to S3
       - echo "Deploying frontend to S3"
-      - aws s3 sync frontend/build/ s3://stockbrokerapp --delete
+      - aws s3 sync frontend/build/ s3://stocktrackerappartifact --delete
 
       # Backend Deploy to EC2
       - echo "Deploying Flask backend to EC2"
