@@ -36,13 +36,15 @@ phases:
             --comment "Deploy updated Flask backend" \
             --parameters 'commands=[
               "cd /home/ec2-user",
-              "if [ ! -d stock-backend ]; then git clone https://github.com/umass-sriram/stock-tracker.git stock-backend; fi",
+              "sudo yum install -y git",
+              "if [ ! -d stock-backend ]; then git clone https://github.com/YOUR_USERNAME/YOUR_BACKEND_REPO.git stock-backend; fi",
               "cd stock-backend",
               "git pull origin main",
-              "python3 -m venv venv",
+              "if [ ! -d venv ]; then python3 -m venv venv; fi",
               "source venv/bin/activate",
+              "pip install --upgrade pip",
               "pip install -r requirements.txt",
-              "sudo systemctl restart flaskapp"
+              "sudo systemctl restart flaskapp || echo 'Service not found, please create it manually if needed.'"
             ]' \
             --region us-east-1
         done
