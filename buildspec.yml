@@ -42,10 +42,10 @@ phases:
               "cd /home/ec2-user",
               "sudo yum install -y git",
               "sudo git clone https://github.com/umass-sriram/stock-tracker.git stock-backend",
-              "sudo cd stock-backend",
+              "cd stock-backend",
               "if [ ! -d venv ]; then python3 -m venv venv; fi",
-              "source venv/bin/activate && pip install --upgrade pip",
-              "source venv/bin/activate && pip install -r backend/requirements.txt",
+              "source venv/bin/activate && sudo pip install --upgrade pip",
+              "source venv/bin/activate && sudo pip install -r backend/requirements.txt",
               "nohup venv/bin/python3 backend/app.py > app.log 2>&1 &"
             ]' \
             --region us-east-1
