@@ -19,31 +19,31 @@ phases:
 
   post_build:
     commands:
-      - echo "Downloading Bastion SSH Private Key from SSM"
-      - aws ssm get-parameter --name "bastion-private-key" --with-decryption --query "Parameter.Value" --output text > bastion-key.pem
-      - chmod 600 bastion-key.pem
       - echo "Deploying frontend to S3"
       - aws s3 sync frontend/build/ s3://stocktrackerappartifact --delete
-      - echo "Fetching EC2 instance private IPs and Deploying backend"
+  
+      - echo "Fetching EC2 instance IDs"
+      - INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-name backend-asg --query "AutoScalingGroups[].Instances[].InstanceId" --output text)
+      - echo "Found INSTANCE_IDS: $INSTANCE_IDS"
+  
+      - echo "Deploying backend using SSM RunCommand"
       - |
-        INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-name backend-asg --query "AutoScalingGroups[].Instances[].InstanceId" --output text)
-        echo "Found INSTANCE_IDS: $INSTANCE_IDS"
-
-        PRIVATE_IPS=$(aws ec2 describe-instances --instance-ids $INSTANCE_IDS --query "Reservations[].Instances[].PrivateIpAddress" --output text)
-        echo "Found PRIVATE_IPS: $PRIVATE_IPS"
-
-        echo "Starting backend deployment via Bastion Host"
-
-        for ip in $PRIVATE_IPS; do
-          echo "Deploying to $ip"
-          ssh -o StrictHostKeyChecking=no -i bastion-key.pem -J ec2-user@54.167.43.216 ec2-user@$ip <<EOF
-            cd /home/ec2-user/stock-backend
-            git pull origin main
-            source venv/bin/activate
-            pip install -r requirements.txt
-            sudo systemctl restart flaskapp
-          EOF
+        for id in $INSTANCE_IDS; do
+          echo "Sending deployment command to $id"
+          aws ssm send-command \
+            --instance-ids "$id" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy updated Flask backend" \
+            --parameters 'commands=[
+              "cd /home/ec2-user/stock-backend",
+              "git pull origin main",
+              "source venv/bin/activate",
+              "pip install -r requirements.txt",
+              "sudo systemctl restart flaskapp"
+            ]' \
+            --region us-east-1
         done
+
 
 artifacts:
   files:
