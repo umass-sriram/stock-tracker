@@ -41,9 +41,8 @@ phases:
             --parameters commands='[
               "cd /home/ec2-user",
               "sudo yum install -y git",
-              "if [ ! -d stock-backend ]; then git clone https://github.com/umass-sriram/stock-tracker.git stock-backend; fi",
-              "cd stock-backend",
-              "git pull origin main",
+              "sudo git clone https://github.com/umass-sriram/stock-tracker.git stock-backend",
+              "sudo cd stock-backend",
               "if [ ! -d venv ]; then python3 -m venv venv; fi",
               "source venv/bin/activate",
               "pip install --upgrade pip",
