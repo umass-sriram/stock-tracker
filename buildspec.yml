@@ -44,10 +44,9 @@ phases:
               "sudo git clone https://github.com/umass-sriram/stock-tracker.git stock-backend",
               "sudo cd stock-backend",
               "if [ ! -d venv ]; then python3 -m venv venv; fi",
-              "source venv/bin/activate",
-              "pip install --upgrade pip",
-              "pip install -r requirements.txt",
-              "sudo systemctl restart flaskapp || echo Service not found"
+              "source venv/bin/activate && pip install --upgrade pip",
+              "source venv/bin/activate && pip install -r backend/requirements.txt",
+              "nohup venv/bin/python3 backend/app.py > app.log 2>&1 &"
             ]' \
             --region us-east-1
         done
