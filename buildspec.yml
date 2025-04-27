@@ -35,8 +35,11 @@ phases:
             --document-name "AWS-RunShellScript" \
             --comment "Deploy updated Flask backend" \
             --parameters 'commands=[
-              "cd /home/ec2-user/stock-backend",
+              "cd /home/ec2-user",
+              "if [ ! -d stock-backend ]; then git clone https://github.com/YOUR_GITHUB_USERNAME/YOUR_BACKEND_REPO.git stock-backend; fi",
+              "cd stock-backend",
               "git pull origin main",
+              "python3 -m venv venv",
               "source venv/bin/activate",
               "pip install -r requirements.txt",
               "sudo systemctl restart flaskapp"
