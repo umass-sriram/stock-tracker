@@ -11,7 +11,6 @@ phases:
 
   build:
     commands:
-      # Build Frontend
       - echo "Building React frontend"
       - cd frontend
       - npm install
@@ -23,12 +22,10 @@ phases:
       - echo "Downloading Bastion SSH Private Key from SSM"
       - aws ssm get-parameter --name "bastion-private-key" --with-decryption --query "Parameter.Value" --output text > bastion-key.pem
       - chmod 600 bastion-key.pem
-      
-      # Upload Frontend to S3
+
       - echo "Deploying frontend to S3"
       - aws s3 sync frontend/build/ s3://stocktrackerappartifact --delete
 
-      # Deploy Backend to EC2 instances via Bastion
       - echo "Fetching EC2 instance private IPs"
       - INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-name backend-asg --query "AutoScalingGroups[].Instances[].InstanceId" --output text)
       - echo "Found INSTANCE_IDS: $INSTANCE_IDS"
@@ -38,7 +35,6 @@ phases:
 
       - echo "Starting backend deployment via Bastion Host"
 
-      # Loop over each instance
       - |
         for ip in $PRIVATE_IPS; do
           echo "Deploying to $ip"
