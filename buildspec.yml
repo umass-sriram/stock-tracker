@@ -36,8 +36,9 @@ phases:
             --comment "Deploy updated Flask backend" \
             --parameters 'commands=[
               "cd /home/ec2-user",
-              "sudo yum install -y git",
-              "if [ ! -d stock-backend ]; then git clone https://github.com/YOUR_USERNAME/YOUR_BACKEND_REPO.git stock-backend; fi",
+              "sudo yum install -y git"
+              "cd /home/ec2-user",
+              "if [ ! -d stock-backend ]; then git clone https://github.com/umass-sriram/stock-tracker.git stock-backend; fi",
               "cd stock-backend",
               "git pull origin main",
               "if [ ! -d venv ]; then python3 -m venv venv; fi",
