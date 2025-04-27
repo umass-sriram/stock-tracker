@@ -39,6 +39,8 @@ phases:
             --document-name "AWS-RunShellScript" \
             --comment "Deploy updated Flask backend" \
             --parameters commands='[
+              "export AWS_REGION=us-east-1",
+              "export AWS_DEFAULT_REGION=us-east-1",
               "cd /home/ec2-user",
               "sudo yum install -y git",
               "sudo git clone https://github.com/umass-sriram/stock-tracker.git stock-backend",
