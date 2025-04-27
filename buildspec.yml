@@ -39,7 +39,7 @@ phases:
       - |
         for ip in $PRIVATE_IPS; do
           echo "Deploying to $ip"
-          ssh -o StrictHostKeyChecking=no -i /path/to/your/bastion-private-key.pem -J ec2-user@54.167.43.216 ec2-user@$ip << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i bastion-key.pem -J ec2-user@54.167.43.216 ec2-user@$ip << 'EOF'
             cd /home/ec2-user/stock-backend
             git pull origin main
             source venv/bin/activate
