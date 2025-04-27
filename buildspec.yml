@@ -51,7 +51,7 @@ phases:
               "export AWS_REGION=us-east-1",
               "export AWS_DEFAULT_REGION=us-east-1",
               "cd /home/ec2-user",
-              "if [ ! -d stock-backend ]; then git clone https://github.com/umass-sriram/stock-tracker.git stock-backend; fi",
+              "sudo git clone https://github.com/umass-sriram/stock-tracker.git stock-backend",
               "cd stock-backend/backend",
               "if [ ! -d ../venv ]; then python3 -m venv ../venv; fi",
               "source ../venv/bin/activate",
