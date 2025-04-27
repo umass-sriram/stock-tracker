@@ -21,17 +21,17 @@ phases:
     commands:
       - echo "Deploying frontend to S3"
       - aws s3 sync frontend/build/ s3://stocktrackerappartifact --delete
-  
+
       - echo "Fetching EC2 instance IDs"
-      - INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-name backend-asg --query "AutoScalingGroups[].Instances[].InstanceId" --output text)
-      - echo "Found INSTANCE_IDS: $INSTANCE_IDS"
-  
+      - |
+        INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-name backend-asg --query "AutoScalingGroups[].Instances[].InstanceId" --output text)
+        echo "Found INSTANCE_IDS: $INSTANCE_IDS"
+
       - echo "Deploying backend using SSM RunCommand"
       - |
         for id in $INSTANCE_IDS; do
           echo "Sending deployment command to $id"
-          aws ssm send-command \
-            --instance-ids "$id" \
+          aws ssm send-command --instance-ids "$id" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy updated Flask backend" \
             --parameters 'commands=[
@@ -43,7 +43,6 @@ phases:
             ]' \
             --region us-east-1
         done
-
 
 artifacts:
   files:
