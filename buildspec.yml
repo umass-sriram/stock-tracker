@@ -31,7 +31,10 @@ phases:
       # Deploy Backend to EC2 instances via Bastion
       - echo "Fetching EC2 instance private IPs"
       - INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-name backend-asg --query "AutoScalingGroups[].Instances[].InstanceId" --output text)
+      - echo "Found INSTANCE_IDS: $INSTANCE_IDS"
+
       - PRIVATE_IPS=$(aws ec2 describe-instances --instance-ids $INSTANCE_IDS --query "Reservations[].Instances[].PrivateIpAddress" --output text)
+      - echo "Found PRIVATE_IPS: $PRIVATE_IPS"
 
       - echo "Starting backend deployment via Bastion Host"
 
@@ -39,7 +42,7 @@ phases:
       - |
         for ip in $PRIVATE_IPS; do
           echo "Deploying to $ip"
-          ssh -o StrictHostKeyChecking=no -i bastion-key.pem -J ec2-user@54.167.43.216 ec2-user@$ip << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i bastion-key.pem -J ec2-user@54.167.43.216 ec2-user@$ip <<EOF
             cd /home/ec2-user/stock-backend
             git pull origin main
             source venv/bin/activate
