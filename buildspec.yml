@@ -7,10 +7,11 @@ phases:
       python: 3.11
     commands:
       - echo "Installing dependencies for frontend and backend"
+      - pip install awscli
 
   build:
     commands:
-      # Frontend Build
+      # Build Frontend
       - echo "Building React frontend"
       - cd frontend
       - npm install
@@ -19,20 +20,29 @@ phases:
 
   post_build:
     commands:
-      # Frontend Deploy to S3
+      # Upload Frontend to S3
       - echo "Deploying frontend to S3"
       - aws s3 sync frontend/build/ s3://stocktrackerappartifact --delete
 
-      # Backend Deploy to EC2
-      - echo "Deploying Flask backend to EC2"
+      # Deploy Backend to EC2 instances via Bastion
+      - echo "Fetching EC2 instance private IPs"
+      - INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-name backend-asg --query "AutoScalingGroups[].Instances[].InstanceId" --output text)
+      - PRIVATE_IPS=$(aws ec2 describe-instances --instance-ids $INSTANCE_IDS --query "Reservations[].Instances[].PrivateIpAddress" --output text)
+
+      - echo "Starting backend deployment via Bastion Host"
+
+      # Loop over each instance
       - |
-        ssh -o StrictHostKeyChecking=no ec2-user@YOUR_EC2_PUBLIC_DNS << 'EOF'
-        cd /home/ec2-user/stock-backend
-        git pull origin main
-        source venv/bin/activate
-        pip install -r requirements.txt
-        sudo systemctl restart flaskapp
-        EOF
+        for ip in $PRIVATE_IPS; do
+          echo "Deploying to $ip"
+          ssh -o StrictHostKeyChecking=no -i /path/to/your/bastion-private-key.pem -J ec2-user@YOUR_BASTION_PUBLIC_IP ec2-user@$ip << 'EOF'
+            cd /home/ec2-user/stock-backend
+            git pull origin main
+            source venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart flaskapp
+          EOF
+        done
 
 artifacts:
   files:
