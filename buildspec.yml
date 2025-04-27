@@ -22,9 +22,8 @@ phases:
       - echo "Deploying frontend to S3"
       - aws s3 sync frontend/build/ s3://stocktrackerappartifact --delete
 
-      - echo "Deploying backend using SSM RunCommand"
+      - echo "Fetching EC2 instance IDs and deploying backend using SSM"
       - |
-        bash -c '
         INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-name backend-asg --query "AutoScalingGroups[].Instances[].InstanceId" --output text)
         echo "Found INSTANCE_IDS: $INSTANCE_IDS"
 
@@ -33,12 +32,21 @@ phases:
           aws ssm send-command --instance-ids "$id" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy updated Flask backend" \
-            --parameters commands=[
+            --parameters 'commands=[
               "cd /home/ec2-user",
               "sudo yum install -y git",
-              "cd /home/ec2-user",
               "if [ ! -d stock-backend ]; then git clone https://github.com/umass-sriram/stock-tracker.git stock-backend; fi",
               "cd stock-backend",
               "git pull origin main",
               "if [ ! -d venv ]; then python3 -m venv venv; fi",
-              "
+              "source venv/bin/activate",
+              "pip install --upgrade pip",
+              "pip install -r requirements.txt",
+              "sudo systemctl restart flaskapp || echo Service not found"
+            ]' \
+            --region us-east-1
+        done
+
+artifacts:
+  files:
+    - '**/*'
