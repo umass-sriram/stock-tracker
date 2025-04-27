@@ -20,15 +20,24 @@ phases:
   post_build:
     commands:
       - echo "Deploying frontend to S3"
+      - export AWS_REGION=us-east-1
+      - export AWS_DEFAULT_REGION=us-east-1
       - aws s3 sync frontend/build/ s3://stocktrackerappartifact --delete
 
       - echo "Fetching EC2 instance IDs"
       - |
+        set -e
+        export AWS_REGION=us-east-1
+        export AWS_DEFAULT_REGION=us-east-1
         INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups \
           --auto-scaling-group-name backend-asg \
           --query "AutoScalingGroups[].Instances[].InstanceId" \
           --output text)
         echo "Found INSTANCE_IDS: $INSTANCE_IDS"
+        if [ -z "$INSTANCE_IDS" ]; then
+          echo "No instances found, exiting!"
+          exit 1
+        fi
 
       - echo "Deploying backend using SSM RunCommand"
       - |
@@ -38,18 +47,18 @@ phases:
             --instance-ids "$id" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy updated Flask backend" \
-            --parameters commands='[
+            --parameters '{"commands": [
               "export AWS_REGION=us-east-1",
               "export AWS_DEFAULT_REGION=us-east-1",
               "cd /home/ec2-user",
-              "sudo yum install -y git",
-              "sudo git clone https://github.com/umass-sriram/stock-tracker.git stock-backend",
-              "if [ ! -d venv ]; then python3 -m venv venv; fi",
-              "sudo chown -R ec2-user:ec2-user /home/ec2-user/venv"
-              "source venv/bin/activate && sudo pip install --upgrade pip",
-              "source venv/bin/activate && sudo pip install -r stock-backend/backend/requirements.txt",
-              "nohup venv/bin/python3 stock-backend/backend/app.py > app.log 2>&1 &"
-            ]' \
+              "if [ ! -d stock-backend ]; then git clone https://github.com/umass-sriram/stock-tracker.git stock-backend; fi",
+              "cd stock-backend/backend",
+              "if [ ! -d ../venv ]; then python3 -m venv ../venv; fi",
+              "source ../venv/bin/activate",
+              "pip install --upgrade pip",
+              "pip install -r requirements.txt",
+              "nohup ../venv/bin/python3 app.py > app.log 2>&1 &"
+            ]}' \
             --region us-east-1
         done
 
