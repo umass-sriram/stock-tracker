@@ -36,7 +36,7 @@ phases:
             --comment "Deploy updated Flask backend" \
             --parameters 'commands=[
               "cd /home/ec2-user",
-              "if [ ! -d stock-backend ]; then git clone https://github.com/YOUR_GITHUB_USERNAME/YOUR_BACKEND_REPO.git stock-backend; fi",
+              "if [ ! -d stock-backend ]; then git clone https://github.com/umass-sriram/stock-tracker.git stock-backend; fi",
               "cd stock-backend",
               "git pull origin main",
               "python3 -m venv venv",
