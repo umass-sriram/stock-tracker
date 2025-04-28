@@ -3,30 +3,27 @@ from jose import jwt
 import requests
 from flask_cors import CORS
 import os
-import datetime as dt
-from dateutil.relativedelta import relativedelta
+from polygon import RESTClient
+from datetime import datetime, timedelta
 import boto3
 from boto3.dynamodb.conditions import Key
 
-# Initialize DynamoDB
+# Initialize
 dynamodb = boto3.resource('dynamodb')
 portfolio_table = dynamodb.Table('UserPortfolios')
 
-# Initialize Flask
 app = Flask(__name__)
 CORS(app)
 
-# Constants
 COGNITO_REGION = "us-east-1"
 USER_POOL_ID = "us-east-1_zxEXADgC5"
 COGNITO_ISSUER = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{USER_POOL_ID}"
 JWKS_URL = f"{COGNITO_ISSUER}/.well-known/jwks.json"
 JWKS = requests.get(JWKS_URL).json()
 
-TWELVE_DATA_API_KEY = "982cdd7dc9c14e8eaf1f9c61c22cf1f0"
-TWELVE_DATA_BASE_URL = "https://api.twelvedata.com"
+POLYGON_API_KEY = "c_Nc9wSU9dr4DshD0xegTNpliM4y7L1c"
+polygon_client = RESTClient(POLYGON_API_KEY)
 
-# Token verification
 def get_public_key(token):
     headers = jwt.get_unverified_header(token)
     kid = headers["kid"]
@@ -53,25 +50,6 @@ def verify_token(request):
 def health_check():
     return {'status': 'ok'}, 200
 
-# New function to get stock prices from Twelve Data
-def fetch_latest_prices(symbols):
-    prices = {}
-    for symbol in symbols:
-        params = {
-            "symbol": symbol,
-            "apikey": TWELVE_DATA_API_KEY
-        }
-        response = requests.get(f"{TWELVE_DATA_BASE_URL}/price", params=params)
-        if response.status_code == 200:
-            data = response.json()
-            if 'price' in data:
-                prices[symbol] = round(float(data['price']), 2)
-            else:
-                print(f"No price found for {symbol}: {data}")
-        else:
-            print(f"Failed to fetch price for {symbol}: {response.text}")
-    return prices
-
 @app.route("/api/stocks", methods=["GET"])
 def get_stocks():
     try:
@@ -79,7 +57,29 @@ def get_stocks():
         verify_token(request)
 
         symbols = ["AAPL", "GOOGL", "TSLA", "MSFT", "AMZN", "NVDA"]
-        result = fetch_latest_prices(symbols)
+
+        result = {}
+
+        for symbol in symbols:
+            try:
+                # Fetch the previous close
+                previous_closes = list(polygon_client.list_aggs(
+                    ticker=symbol,
+                    multiplier=1,
+                    timespan="day",
+                    from_="2024-04-26",  # you can dynamically calculate "yesterday" if needed
+                    to="2024-04-26",
+                    limit=1
+                ))
+
+                if previous_closes:
+                    close_price = previous_closes[0].close
+                    result[symbol] = round(close_price, 2)
+                else:
+                    print(f"No data found for {symbol}")
+
+            except Exception as inner_e:
+                print(f"Error fetching data for {symbol}: {inner_e}")
 
         if not result:
             return jsonify({"error": "No stock data found"}), 404
@@ -96,15 +96,17 @@ def search_stock():
     print("Searching stock:", symbol)
     try:
         verify_token(request)
-        price_info = fetch_latest_prices([symbol])
-        if symbol not in price_info:
+        previous_close = polygon_client.get_previous_close(symbol)
+        if previous_close and previous_close.results:
+            last_price = previous_close.results[0].c
+            return jsonify({
+                "symbol": symbol,
+                "price": round(last_price, 2)
+            })
+        else:
             return jsonify({"error": "Symbol not found"}), 404
-
-        # Dummy percent change since Twelve Data free plan doesn't give previous close easily
-        return jsonify({"symbol": symbol, "price": price_info[symbol], "change": 0.0})
-
     except Exception as e:
-        print(str(e))
+        print("Error in search_stock:", str(e))
         return jsonify({"error": "Unauthorized", "message": str(e)}), 401
 
 @app.route("/api/portfolio", methods=["GET", "POST"])
@@ -121,6 +123,7 @@ def portfolio():
             portfolio_table.put_item(Item={"email": user_email, "symbol": symbol})
             return jsonify({"message": f"{symbol} added to portfolio"})
 
+        # GET method
         response = portfolio_table.query(
             KeyConditionExpression=Key("email").eq(user_email)
         )
@@ -128,6 +131,7 @@ def portfolio():
         return jsonify(symbols)
 
     except Exception as e:
+        print("Error in portfolio:", str(e))
         return jsonify({"error": "Unauthorized", "message": str(e)}), 401
 
 if __name__ == "__main__":
