@@ -3,6 +3,7 @@ from jose import jwt
 import requests
 from flask_cors import CORS
 import datetime as dt
+from dateutil.relativedelta import relativedelta
 import yfinance as yf
 import boto3
 from boto3.dynamodb.conditions import Key
