@@ -24,7 +24,8 @@ phases:
       - export AWS_REGION=us-east-1
       - export AWS_DEFAULT_REGION=us-east-1
       - aws s3 sync frontend/build/ s3://stocktrackerappartifact --delete
-
+      - echo "Invalidating CloudFront cache"
+      - aws cloudfront create-invalidation --distribution-id E2N2HAJ6D1PRSO --paths "/*"
       - echo "Fetching EC2 instance IDs"
       - |
         set -e
