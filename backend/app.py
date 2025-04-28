@@ -12,16 +12,9 @@ portfolio_table = dynamodb.Table('UserPortfolios')
 
 app = Flask(__name__)
 CORS(app)
-yf.enable_debug_mode()
 
-end=dt.datetime.now()
-
-if end.month<=6:
-    start = end.replace(year=end.year-1, month=12+(end.month-6))
-else:
-    start = end.replace(month=end.month-6)
-
-
+end = dt.datetime.now()
+start = end - relativedelta(months=3)
 
 COGNITO_REGION = "us-east-1"
 USER_POOL_ID = "us-east-1_zxEXADgC5"
