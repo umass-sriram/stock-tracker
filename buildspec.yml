@@ -13,6 +13,7 @@ phases:
     commands:
       - echo "Building React frontend"
       - cd frontend
+      - rm -rf build node_modules
       - npm install
       - npm run build
       - cd ..
