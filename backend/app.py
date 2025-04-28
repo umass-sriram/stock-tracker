@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from jose import jwt
 import requests
 from flask_cors import CORS
-import datetime
+import datetime as dt
 import yfinance as yf
 import boto3
 from boto3.dynamodb.conditions import Key
