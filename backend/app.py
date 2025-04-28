@@ -52,23 +52,40 @@ def verify_token(request):
 def health_check():
     return {'status': 'ok'}, 200
     
-@app.route("/api/stocks")
+@app.route("/api/stocks", methods=["GET"])
 def get_stocks():
     try:
-        print("get_stocks")
+        print("Fetching stocks...")
         verify_token(request)
+
         symbols = ["AAPL", "GOOGL", "TSLA", "MSFT", "AMZN", "NVDA"]
-        #data = yf.download(tickers=" ".join(symbols), interval='1wk', end=end, start=start)
-        #data = yf.download(tickers=" ".join(symbols), period="7d", interval="1m", group_by='ticker')
-        data = yf.download(tickers=" ".join(symbols), period="3mo", interval="1d", group_by='ticker')
+
+        # Download 3 months of daily data
+        data = yf.download(tickers=" ".join(symbols), period="3mo", interval="1d", group_by="ticker")
+
+        if data.empty:
+            return jsonify({"error": "No stock data found"}), 404
+
         result = {}
+
         for symbol in symbols:
-            if symbol in data:
-                latest = data[symbol]['Close'].dropna().iloc[-1]
-                result[symbol] = round(latest, 2)
+            if symbol in data.columns.get_level_values(0):
+                symbol_data = data[symbol]
+                if not symbol_data.empty and 'Close' in symbol_data:
+                    last_close = symbol_data['Close'].dropna()
+                    if not last_close.empty:
+                        result[symbol] = round(last_close.iloc[-1], 2)
+                    else:
+                        print(f"No close price found for {symbol}")
+                else:
+                    print(f"No data for {symbol}")
+            else:
+                print(f"Symbol {symbol} not found in fetched data")
+
         return jsonify(result)
+
     except Exception as e:
-        print(str(e))
+        print("Error in get_stocks:", str(e))
         return jsonify({"error": "Unauthorized", "message": str(e)}), 401
 
 @app.route("/api/searchstock", methods=["GET"])
