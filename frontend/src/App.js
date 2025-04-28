@@ -23,7 +23,7 @@ function App() {
   const logout = () => {
     localStorage.removeItem("id_token");
     const logoutUrl =
-      `https://us-east-1_zxEXADgC5.auth.us-east-1.amazoncognito.com/logout` +
+      `https://us-east-1zxEXADgC5.auth.us-east-1.amazoncognito.com/logout` +
       `?client_id=411p65nnq24h8oerja7ncmuphs` +
       `&redirect_uri=https://demostocktracker.com/&response_type=token&scope=email+openid+phone`;
     window.location.href = logoutUrl;
@@ -31,7 +31,7 @@ function App() {
 
   const login = () => {
     window.location.href =
-      "https://us-east-1_zxEXADgC5.auth.us-east-1.amazoncognito.com/login" +
+      "https://us-east-1zxEXADgC5.auth.us-east-1.amazoncognito.com/login" +
       "?response_type=token" +
       "&client_id=411p65nnq24h8oerja7ncmuphs" +
       "&redirect_uri=https://demostocktracker.com/" +
