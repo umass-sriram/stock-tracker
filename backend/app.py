@@ -2,37 +2,31 @@ from flask import Flask, request, jsonify
 from jose import jwt
 import requests
 from flask_cors import CORS
+import os
 import datetime as dt
 from dateutil.relativedelta import relativedelta
-import yfinance as yf
 import boto3
 from boto3.dynamodb.conditions import Key
 
+# Initialize DynamoDB
 dynamodb = boto3.resource('dynamodb')
 portfolio_table = dynamodb.Table('UserPortfolios')
 
+# Initialize Flask
 app = Flask(__name__)
 CORS(app)
 
-end = dt.datetime.now()
-start = end - relativedelta(months=3)
-
-session = requests.Session()
-session.headers.update({
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-})
-
-yf.utils.requests = session
-
+# Constants
 COGNITO_REGION = "us-east-1"
 USER_POOL_ID = "us-east-1_zxEXADgC5"
 COGNITO_ISSUER = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{USER_POOL_ID}"
 JWKS_URL = f"{COGNITO_ISSUER}/.well-known/jwks.json"
 JWKS = requests.get(JWKS_URL).json()
 
-PORTFOLIOS = {}
+TWELVE_DATA_API_KEY = "982cdd7dc9c14e8eaf1f9c61c22cf1f0"
+TWELVE_DATA_BASE_URL = "https://api.twelvedata.com"
 
-
+# Token verification
 def get_public_key(token):
     headers = jwt.get_unverified_header(token)
     kid = headers["kid"]
@@ -58,9 +52,25 @@ def verify_token(request):
 @app.route('/health', methods=['GET'])
 def health_check():
     return {'status': 'ok'}, 200
-    
-import time
-import random
+
+# New function to get stock prices from Twelve Data
+def fetch_latest_prices(symbols):
+    prices = {}
+    for symbol in symbols:
+        params = {
+            "symbol": symbol,
+            "apikey": TWELVE_DATA_API_KEY
+        }
+        response = requests.get(f"{TWELVE_DATA_BASE_URL}/price", params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if 'price' in data:
+                prices[symbol] = round(float(data['price']), 2)
+            else:
+                print(f"No price found for {symbol}: {data}")
+        else:
+            print(f"Failed to fetch price for {symbol}: {response.text}")
+    return prices
 
 @app.route("/api/stocks", methods=["GET"])
 def get_stocks():
@@ -69,35 +79,7 @@ def get_stocks():
         verify_token(request)
 
         symbols = ["AAPL", "GOOGL", "TSLA", "MSFT", "AMZN", "NVDA"]
-        result = {}
-
-        for symbol in symbols:
-            print(f"Fetching data for {symbol}...")
-
-            success = False
-            attempts = 0
-            while not success and attempts < 3:
-                try:
-                    stock = yf.Ticker(symbol)
-                    data = stock.history(period="6mo", interval="1d")
-
-                    if not data.empty and 'Close' in data:
-                        last_close = data['Close'].dropna()
-                        if not last_close.empty:
-                            result[symbol] = round(float(last_close.iloc[-1]), 2)
-                        else:
-                            print(f"No closing price for {symbol}")
-                    else:
-                        print(f"No valid data for {symbol}")
-                    success = True  # Exit retry loop if successful
-
-                except Exception as fetch_error:
-                    attempts += 1
-                    print(f"Error fetching {symbol}: {fetch_error} (attempt {attempts})")
-                    time.sleep(random.uniform(1, 2))  # wait and retry
-
-            # Add a small random delay between symbols
-            time.sleep(random.uniform(0.5, 1.0))
+        result = fetch_latest_prices(symbols)
 
         if not result:
             return jsonify({"error": "No stock data found"}), 404
@@ -108,42 +90,21 @@ def get_stocks():
         print("Error in get_stocks:", str(e))
         return jsonify({"error": "Unauthorized", "message": str(e)}), 401
 
-
-
-
 @app.route("/api/searchstock", methods=["GET"])
 def search_stock():
     symbol = request.args.get("symbol", "").upper()
-    print("symbol",symbol)
+    print("Searching stock:", symbol)
     try:
         verify_token(request)
-        stock = yf.Ticker(symbol)
-        info = stock.history(period="1d", interval="1m")
-        if info.empty:
+        price_info = fetch_latest_prices([symbol])
+        if symbol not in price_info:
             return jsonify({"error": "Symbol not found"}), 404
-        current_price = round(info['Close'].dropna().iloc[-1], 2)
-        prev_close = round(stock.history(period="2d")['Close'].iloc[0], 2)
-        change = round(((current_price - prev_close) / prev_close) * 100, 2)
-        return jsonify({"symbol": symbol, "price": current_price, "change": change})
+
+        # Dummy percent change since Twelve Data free plan doesn't give previous close easily
+        return jsonify({"symbol": symbol, "price": price_info[symbol], "change": 0.0})
+
     except Exception as e:
         print(str(e))
-        return jsonify({"error": "Unauthorized", "message": str(e)}), 401
-
-@app.route("/api/stocks/history")
-def get_price_history():
-    symbol = request.args.get("symbol", "").upper()
-    try:
-        verify_token(request)
-        stock = yf.Ticker(symbol)
-        hist = stock.history(period="1mo")
-        if hist.empty:
-            return jsonify({"error": "Symbol not found"}), 404
-        history = [
-            {"date": idx.strftime("%Y-%m-%d"), "price": round(row["Close"], 2)}
-            for idx, row in hist.iterrows()
-        ]
-        return jsonify(history)
-    except Exception as e:
         return jsonify({"error": "Unauthorized", "message": str(e)}), 401
 
 @app.route("/api/portfolio", methods=["GET", "POST"])
@@ -160,7 +121,6 @@ def portfolio():
             portfolio_table.put_item(Item={"email": user_email, "symbol": symbol})
             return jsonify({"message": f"{symbol} added to portfolio"})
 
-        # GET method
         response = portfolio_table.query(
             KeyConditionExpression=Key("email").eq(user_email)
         )
@@ -169,7 +129,6 @@ def portfolio():
 
     except Exception as e:
         return jsonify({"error": "Unauthorized", "message": str(e)}), 401
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
