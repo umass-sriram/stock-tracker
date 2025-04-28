@@ -21,6 +21,7 @@ JWKS = requests.get(JWKS_URL).json()
 
 PORTFOLIOS = {}
 
+
 def get_public_key(token):
     headers = jwt.get_unverified_header(token)
     kid = headers["kid"]
@@ -43,6 +44,10 @@ def verify_token(request):
     )
     return decoded
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    return {'status': 'ok'}, 200
+    
 @app.route("/api/stocks")
 def get_stocks():
     try:
