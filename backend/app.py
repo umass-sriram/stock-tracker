@@ -12,6 +12,16 @@ portfolio_table = dynamodb.Table('UserPortfolios')
 
 app = Flask(__name__)
 CORS(app)
+yf.enable_debug_mode()
+
+end=dt.datetime.now()
+
+if end.month<=6:
+    start = end.replace(year=end.year-1, month=12+(end.month-6))
+else:
+    start = end.replace(month=end.month-6)
+
+
 
 COGNITO_REGION = "us-east-1"
 USER_POOL_ID = "us-east-1_zxEXADgC5"
@@ -54,7 +64,7 @@ def get_stocks():
         print("get_stocks")
         verify_token(request)
         symbols = ["AAPL", "GOOGL", "TSLA", "MSFT", "AMZN", "NVDA"]
-        data = yf.download(tickers=" ".join(symbols), period="1d", interval="1m", group_by='ticker')
+        data = yf.download(tickers=" ".join(symbols), interval='1wk', end=end, start=start)
         result = {}
         for symbol in symbols:
             if symbol in data:
