@@ -59,7 +59,8 @@ def get_stocks():
         verify_token(request)
         symbols = ["AAPL", "GOOGL", "TSLA", "MSFT", "AMZN", "NVDA"]
         #data = yf.download(tickers=" ".join(symbols), interval='1wk', end=end, start=start)
-        data = yf.download(tickers=" ".join(symbols), period="7d", interval="1m", group_by='ticker')
+        #data = yf.download(tickers=" ".join(symbols), period="7d", interval="1m", group_by='ticker')
+        data = yf.download(tickers=" ".join(symbols), period="3mo", interval="1d", group_by='ticker')
         result = {}
         for symbol in symbols:
             if symbol in data:
