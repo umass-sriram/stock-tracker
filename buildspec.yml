@@ -52,6 +52,7 @@ phases:
               "export AWS_DEFAULT_REGION=us-east-1",
               "cd /home/ec2-user",
               "sudo yum install -y git",
+              "sudo rm -rf /home/ec2-user/stock-backend",
               "sudo git clone https://github.com/umass-sriram/stock-tracker.git stock-backend",
               "python3 -m venv venv",
               "sudo chown -R ec2-user:ec2-user /home/ec2-user/venv",
