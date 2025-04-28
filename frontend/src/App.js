@@ -58,7 +58,7 @@ function App() {
   useEffect(() => {
     if (token) {
       axios
-        .get("https://api.demostocktracker.com:5000/api/stocks", {
+        .get("https://api.demostocktracker.com/api/stocks", {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => setStocks(res.data))
@@ -70,7 +70,7 @@ function App() {
   useEffect(() => {
     if (token) {
       axios
-        .get("https://api.demostocktracker.com:5000/api/portfolio", {
+        .get("https://api.demostocktracker.com/api/portfolio", {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => setPortfolio(res.data))
