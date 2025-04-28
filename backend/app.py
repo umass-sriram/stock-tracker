@@ -17,6 +17,13 @@ CORS(app)
 end = dt.datetime.now()
 start = end - relativedelta(months=3)
 
+session = requests.Session()
+session.headers.update({
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+})
+
+yf.utils.requests = session
+
 COGNITO_REGION = "us-east-1"
 USER_POOL_ID = "us-east-1_zxEXADgC5"
 COGNITO_ISSUER = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{USER_POOL_ID}"
@@ -59,34 +66,34 @@ def get_stocks():
         verify_token(request)
 
         symbols = ["AAPL", "GOOGL", "TSLA", "MSFT", "AMZN", "NVDA"]
-
-        # Download 3 months of daily data
-        data = yf.download(tickers=" ".join(symbols), period="3mo", interval="1d", group_by="ticker")
-
-        if data.empty:
-            return jsonify({"error": "No stock data found"}), 404
-
         result = {}
 
         for symbol in symbols:
-            if symbol in data.columns.get_level_values(0):
-                symbol_data = data[symbol]
-                if not symbol_data.empty and 'Close' in symbol_data:
-                    last_close = symbol_data['Close'].dropna()
+            print(f"Fetching data for {symbol}...")
+            try:
+                data = yf.download(tickers=symbol, period="6mo", interval="1d")
+                
+                if not data.empty and 'Close' in data:
+                    last_close = data['Close'].dropna()
                     if not last_close.empty:
-                        result[symbol] = round(last_close.iloc[-1], 2)
+                        result[symbol] = round(float(last_close.iloc[-1]), 2)  # <-- cast to float here
                     else:
-                        print(f"No close price found for {symbol}")
+                        print(f"No closing price available for {symbol}")
                 else:
-                    print(f"No data for {symbol}")
-            else:
-                print(f"Symbol {symbol} not found in fetched data")
+                    print(f"No valid data found for {symbol}")
+            except Exception as fetch_error:
+                print(f"Error fetching {symbol}: {fetch_error}")
+
+        if not result:
+            return jsonify({"error": "No stock data found"}), 404
 
         return jsonify(result)
 
     except Exception as e:
         print("Error in get_stocks:", str(e))
         return jsonify({"error": "Unauthorized", "message": str(e)}), 401
+
+
 
 @app.route("/api/searchstock", methods=["GET"])
 def search_stock():
