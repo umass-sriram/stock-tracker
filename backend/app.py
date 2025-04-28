@@ -14,7 +14,6 @@ portfolio_table = dynamodb.Table('UserPortfolios')
 app = Flask(__name__)
 CORS(app)
 
-
 end = dt.datetime.now()
 start = end - relativedelta(months=3)
 
@@ -25,6 +24,7 @@ JWKS_URL = f"{COGNITO_ISSUER}/.well-known/jwks.json"
 JWKS = requests.get(JWKS_URL).json()
 
 PORTFOLIOS = {}
+
 
 def get_public_key(token):
     headers = jwt.get_unverified_header(token)
@@ -50,19 +50,17 @@ def verify_token(request):
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    return {'status': 'ok'}, 200    
-
+    return {'status': 'ok'}, 200
+    
 @app.route("/api/stocks")
 def get_stocks():
     try:
         print("get_stocks")
         verify_token(request)
         symbols = ["AAPL", "GOOGL", "TSLA", "MSFT", "AMZN", "NVDA"]
-        #data = yf.download(tickers=" ".join(symbols), interval='1m', end=end, start=start)
+        #data = yf.download(tickers=" ".join(symbols), interval='1wk', end=end, start=start)
         #data = yf.download(tickers=" ".join(symbols), period="7d", interval="1m", group_by='ticker')
         data = yf.download(tickers=" ".join(symbols), period="3mo", interval="1d", group_by='ticker')
-
-
         result = {}
         for symbol in symbols:
             if symbol in data:
@@ -134,4 +132,4 @@ def portfolio():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000)
