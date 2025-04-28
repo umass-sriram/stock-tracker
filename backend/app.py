@@ -59,6 +59,9 @@ def verify_token(request):
 def health_check():
     return {'status': 'ok'}, 200
     
+import time
+import random
+
 @app.route("/api/stocks", methods=["GET"])
 def get_stocks():
     try:
@@ -70,19 +73,31 @@ def get_stocks():
 
         for symbol in symbols:
             print(f"Fetching data for {symbol}...")
-            try:
-                data = yf.download(tickers=symbol, period="6mo", interval="1d")
-                
-                if not data.empty and 'Close' in data:
-                    last_close = data['Close'].dropna()
-                    if not last_close.empty:
-                        result[symbol] = round(float(last_close.iloc[-1]), 2)  # <-- cast to float here
+
+            success = False
+            attempts = 0
+            while not success and attempts < 3:
+                try:
+                    stock = yf.Ticker(symbol)
+                    data = stock.history(period="6mo", interval="1d")
+
+                    if not data.empty and 'Close' in data:
+                        last_close = data['Close'].dropna()
+                        if not last_close.empty:
+                            result[symbol] = round(float(last_close.iloc[-1]), 2)
+                        else:
+                            print(f"No closing price for {symbol}")
                     else:
-                        print(f"No closing price available for {symbol}")
-                else:
-                    print(f"No valid data found for {symbol}")
-            except Exception as fetch_error:
-                print(f"Error fetching {symbol}: {fetch_error}")
+                        print(f"No valid data for {symbol}")
+                    success = True  # Exit retry loop if successful
+
+                except Exception as fetch_error:
+                    attempts += 1
+                    print(f"Error fetching {symbol}: {fetch_error} (attempt {attempts})")
+                    time.sleep(random.uniform(1, 2))  # wait and retry
+
+            # Add a small random delay between symbols
+            time.sleep(random.uniform(0.5, 1.0))
 
         if not result:
             return jsonify({"error": "No stock data found"}), 404
@@ -92,6 +107,7 @@ def get_stocks():
     except Exception as e:
         print("Error in get_stocks:", str(e))
         return jsonify({"error": "Unauthorized", "message": str(e)}), 401
+
 
 
 
