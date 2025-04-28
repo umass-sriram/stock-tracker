@@ -58,7 +58,7 @@ function App() {
   useEffect(() => {
     if (token) {
       axios
-        .get("http://backend-alb-873206093.us-east-1.elb.amazonaws.com:5000/api/stocks", {
+        .get("https://api.demostocktracker.com:5000/api/stocks", {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => setStocks(res.data))
@@ -70,7 +70,7 @@ function App() {
   useEffect(() => {
     if (token) {
       axios
-        .get("http://backend-alb-873206093.us-east-1.elb.amazonaws.com:5000/api/portfolio", {
+        .get("https://api.demostocktracker.com:5000/api/portfolio", {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => setPortfolio(res.data))
@@ -83,7 +83,7 @@ function App() {
     portfolio.forEach((sym) => {
       if (!priceHistory[sym]) {
         axios
-          .get(`http://backend-alb-873206093.us-east-1.elb.amazonaws.com/api/stocks/history?symbol=${sym}`, {
+          .get(`https://api.demostocktracker.com/api/stocks/history?symbol=${sym}`, {
             headers: { Authorization: `Bearer ${token}` },
           })
           .then((res) => {
@@ -97,7 +97,7 @@ function App() {
   const searchStock = () => {
     if (!symbol) return;
     axios
-      .get(`http://backend-alb-873206093.us-east-1.elb.amazonaws.com/api/searchstock?symbol=${symbol}`, {
+      .get(`https://api.demostocktracker.com/api/searchstock?symbol=${symbol}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setSearchedStock(res.data))
@@ -108,7 +108,7 @@ function App() {
     if (!symbol) return;
     axios
       .post(
-        "http://backend-alb-873206093.us-east-1.elb.amazonaws.com/api/portfolio",
+        "https://api.demostocktracker.com/api/portfolio",
         { symbol },
         {
           headers: { Authorization: `Bearer ${token}` },
