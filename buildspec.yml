@@ -57,7 +57,8 @@ phases:
               "sudo chown -R ec2-user:ec2-user /home/ec2-user/venv",
               "source venv/bin/activate && pip install --upgrade pip",
               "source venv/bin/activate && pip install -r stock-backend/backend/requirements.txt",
-              "nohup venv/bin/python3 stock-backend/backend/app.py > app.log 2>&1 &"
+              "sudo fuser -k 5000/tcp || echo No process found on port 5000",
+              "nohup venv/bin/python3 stock-backend/backend/app.py > /tmp/app.log 2>&1 &"
             ]}' \
             --region us-east-1
         done
