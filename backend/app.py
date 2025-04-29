@@ -96,15 +96,37 @@ def search_stock():
     print("Searching stock:", symbol)
     try:
         verify_token(request)
-        previous_close = polygon_client.get_previous_close(symbol)
-        if previous_close and previous_close.results:
-            last_price = previous_close.results[0].c
+
+        end_date = datetime.today().date()
+        start_date = end_date - timedelta(days=5)
+
+        aggs = polygon_client.get_aggs(
+            ticker=symbol,
+            multiplier=1,
+            timespan="day",
+            from_=str(start_date),
+            to=str(end_date),
+            limit=5
+        )
+
+        if aggs:
+            last_candle = aggs[-1]
+            current_price = round(last_candle.close, 2)
+
+            if len(aggs) > 1:
+                prev_close = aggs[-2].close
+                change = round(((current_price - prev_close) / prev_close) * 100, 2)
+            else:
+                change = 0.0
+
             return jsonify({
                 "symbol": symbol,
-                "price": round(last_price, 2)
+                "price": current_price,
+                "change": change
             })
         else:
             return jsonify({"error": "Symbol not found"}), 404
+
     except Exception as e:
         print("Error in search_stock:", str(e))
         return jsonify({"error": "Unauthorized", "message": str(e)}), 401
