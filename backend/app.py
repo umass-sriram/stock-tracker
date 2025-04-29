@@ -163,7 +163,7 @@ def search_stock():
 
     except Exception as e:
         print("Error in search_stock:", str(e))
-        return jsonify({"error": "Unauthorized", "message": str(e)}), 401
+        return jsonify({"error": "Error in search_stock", "message": str(e)}), 401
 
 
 @app.route("/api/stocks/history")
