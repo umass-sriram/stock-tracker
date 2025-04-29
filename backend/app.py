@@ -87,22 +87,30 @@ def get_stocks():
         print(f"symbols {symbols}")
 
         result = {}
+        end_date = datetime.now().date()
+        start_date = end_date - timedelta(days=5)
+
+        headers = {"Content-Type": "application/json"}
 
         for symbol in symbols:
             try:
-                # Fetch the previous close
-                previous_closes = list(polygon_client.list_aggs(
-                    ticker=symbol,
-                    multiplier=1,
-                    timespan="day",
-                    from_="2024-04-26",  # you can dynamically calculate "yesterday" if needed
-                    to="2024-04-26",
-                    limit=1
-                ))
+                url = f"https://api.tiingo.com/tiingo/daily/{symbol}/prices"
+                params = {
+                    "token": TIINGO_API_KEY,
+                    "startDate": start_date.isoformat(),
+                    "endDate": end_date.isoformat(),
+                    "resampleFreq": "daily"
+                }
 
-                if previous_closes:
-                    close_price = previous_closes[0].close
-                    result[symbol] = round(close_price, 2)
+                response = requests.get(url, headers=headers, params=params)
+                if response.status_code != 200:
+                    print(f"Tiingo error for {symbol}: {response.text}")
+                    continue
+
+                data = response.json()
+                if isinstance(data, list) and data:
+                    close_price = round(data[-1]["close"], 2)
+                    result[symbol] = close_price
                 else:
                     print(f"No data found for {symbol}")
 
