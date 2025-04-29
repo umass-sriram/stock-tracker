@@ -6,6 +6,7 @@ import os
 from polygon import RESTClient
 from datetime import datetime, timedelta
 import time
+import yfinance as yf
 import boto3
 from boto3.dynamodb.conditions import Key
 
@@ -130,44 +131,22 @@ def search_stock():
         print("Error in search_stock:", str(e))
         return jsonify({"error": "Unauthorized", "message": str(e)}), 401
 
-@app.route("/api/stocks/history", methods=["GET"])
+
+@app.route("/api/stocks/history")
 def get_price_history():
     symbol = request.args.get("symbol", "").upper()
     try:
         verify_token(request)
-
-        end_date = datetime.now().date()
-        start_date = end_date - timedelta(days=30)
-
-        url = f"{POLYGON_BASE_URL}/v2/aggs/ticker/{symbol}/range/1/day/{start_date}/{end_date}?limit=30&apiKey={POLYGON_API_KEY}"
-
-        # Retry logic with exponential backoff
-        for attempt in range(5):
-            response = requests.get(url)
-            if response.status_code == 200:
-                data = response.json()
-                if "results" in data and data["results"]:
-                    history = [
-                        {
-                            "date": datetime.utcfromtimestamp(item["t"] / 1000).strftime("%Y-%m-%d"),
-                            "price": round(item["c"], 2)
-                        }
-                        for item in data["results"]
-                    ]
-                    return jsonify(history)
-                else:
-                    return jsonify({"error": "Symbol not found"}), 404
-            elif response.status_code == 429:
-                wait = 2 ** attempt
-                print(f"Rate limited. Retrying in {wait} seconds...")
-                time.sleep(wait)
-            else:
-                break
-
-        return jsonify({"error": "Failed to fetch price history", "details": response.text}), 500
-
+        stock = yf.Ticker(symbol)
+        hist = stock.history(period="1mo")
+        if hist.empty:
+            return jsonify({"error": "Symbol not found"}), 404
+        history = [
+            {"date": idx.strftime("%Y-%m-%d"), "price": round(row["Close"], 2)}
+            for idx, row in hist.iterrows()
+        ]
+        return jsonify(history)
     except Exception as e:
-        print("Error in get_price_history:", str(e))
         return jsonify({"error": "Unauthorized", "message": str(e)}), 401
 
 @app.route("/api/portfolio", methods=["GET", "POST"])
