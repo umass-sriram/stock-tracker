@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import time
 import yfinance as yf
 import boto3
+import json
 from boto3.dynamodb.conditions import Key
 
 # Initialize
