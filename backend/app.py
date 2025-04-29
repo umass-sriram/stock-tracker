@@ -139,29 +139,31 @@ def get_price_history():
     try:
         verify_token(request)
 
-        # Calculate date range for past 1 month
-        end_date = dt.datetime.utcnow().date()
-        start_date = end_date - dt.timedelta(days=30)
+        # Get today's date and 30 days ago
+        end_timestamp = int(time.time())  # current UTC timestamp (seconds)
+        start_timestamp = end_timestamp - (30 * 24 * 60 * 60)  # 30 days ago
 
-        # Fetch from Polygon API
+        end_date = time.strftime('%Y-%m-%d', time.gmtime(end_timestamp))
+        start_date = time.strftime('%Y-%m-%d', time.gmtime(start_timestamp))
+
+        # Fetch data from Polygon
         resp = polygon_client.get_aggs(
             ticker=symbol,
             multiplier=1,
             timespan="day",
-            from_=start_date.isoformat(),
-            to=end_date.isoformat(),
+            from_=start_date,
+            to=end_date,
             limit=30
         )
 
         if not resp or not resp.results:
             return jsonify({"error": "Symbol not found or no data"}), 404
 
-        # Prepare history data
         history = []
         for record in resp.results:
             history.append({
-                "date": dt.datetime.utcfromtimestamp(record['t'] / 1000).strftime("%Y-%m-%d"),
-                "price": round(record['c'], 2)  # Closing price
+                "date": time.strftime('%Y-%m-%d', time.gmtime(record['t'] / 1000)),
+                "price": round(record['c'], 2)
             })
 
         return jsonify(history)
