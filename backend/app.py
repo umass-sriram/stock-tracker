@@ -196,7 +196,7 @@ def get_price_history():
 
     except Exception as e:
         print("Error in get_price_history:", str(e))
-        return jsonify({"error": "Unauthorized", "message": str(e)}), 401
+        return jsonify({"error": "Error in get_price_history:", "message": str(e)}), 401
 
 
 @app.route("/api/portfolio", methods=["GET", "POST"])
