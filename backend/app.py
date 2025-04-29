@@ -222,7 +222,7 @@ def portfolio():
 
     except Exception as e:
         print("Error in portfolio:", str(e))
-        return jsonify({"error": "Unauthorized", "message": str(e)}), 401
+        return jsonify({"error": "Error in portfolio:", "message": str(e)}), 401
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
