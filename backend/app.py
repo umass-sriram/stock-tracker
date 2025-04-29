@@ -83,6 +83,7 @@ def get_stocks():
         verify_token(request)
 
         symbols = get_symbols_from_ssm()
+        print(f"symbols {symbols}")
 
         result = {}
 
