@@ -46,10 +46,7 @@ def get_secret(secret_name):
         raise e
 
 secrets = get_secret("stock-tracker/polygon-api-key")
-TIINGO_API_KEY = "d33ba2939ab7849aaa05b6e06998950016d57263"
-POLYGON_API_KEY = secrets["POLYGON_API_KEY"]
-polygon_client = RESTClient(POLYGON_API_KEY)
-POLYGON_BASE_URL = "https://api.polygon.io"
+TIINGO_API_KEY = secrets["TIINGO_API_KEY"]
 
 def get_public_key(token):
     headers = jwt.get_unverified_header(token)
