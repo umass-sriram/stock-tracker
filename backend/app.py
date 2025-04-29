@@ -46,6 +46,7 @@ def get_secret(secret_name):
         raise e
 
 secrets = get_secret("stock-tracker/polygon-api-key")
+TIINGO_API_KEY = "d33ba2939ab7849aaa05b6e06998950016d57263"
 POLYGON_API_KEY = secrets["POLYGON_API_KEY"]
 polygon_client = RESTClient(POLYGON_API_KEY)
 POLYGON_BASE_URL = "https://api.polygon.io"
@@ -123,27 +124,42 @@ def search_stock():
     print("Searching stock:", symbol)
     try:
         verify_token(request)
-        
+
         end_date = datetime.now().date()
         start_date = end_date - timedelta(days=5)
-        
-        url = f"{POLYGON_BASE_URL}/v2/aggs/ticker/{symbol}/range/1/day/{start_date}/{end_date}?limit=5&apiKey={POLYGON_API_KEY}"
-        response = requests.get(url)
-        data = response.json()
 
-        if response.status_code != 200 or "results" not in data:
-            print(f"Polygon error: {data}")
+        url = f"https://api.tiingo.com/tiingo/daily/{symbol}/prices"
+        headers = { "Content-Type": "application/json" }
+        params = {
+            "token": TIINGO_API_KEY,
+            "startDate": start_date.isoformat(),
+            "endDate": end_date.isoformat(),
+            "resampleFreq": "daily"
+        }
+
+        response = requests.get(url, headers=headers, params=params)
+        if response.status_code != 200:
+            print("Tiingo API Error:", response.text)
+            return jsonify({"error": "Failed to retrieve data"}), 500
+
+        data = response.json()
+        if not isinstance(data, list) or not data:
             return jsonify({"error": "Symbol not found"}), 404
 
-        last_price = data["results"][-1]["c"]
-        return jsonify({"symbol": symbol, "price": round(last_price, 2)})
+        last_close = data[-1]["close"]
+        prev_close = data[0]["close"]
+        change = round(((last_close - prev_close) / prev_close) * 100, 2)
+
+        return jsonify({
+            "symbol": symbol,
+            "price": round(last_close, 2),
+            "change": change
+        })
 
     except Exception as e:
         print("Error in search_stock:", str(e))
         return jsonify({"error": "Unauthorized", "message": str(e)}), 401
 
-
-TIINGO_API_KEY = "d33ba2939ab7849aaa05b6e06998950016d57263"
 
 @app.route("/api/stocks/history")
 def get_price_history():
