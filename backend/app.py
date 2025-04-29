@@ -143,44 +143,40 @@ def search_stock():
         return jsonify({"error": "Unauthorized", "message": str(e)}), 401
 
 
+TIINGO_API_KEY = "d33ba2939ab7849aaa05b6e06998950016d57263"
+
 @app.route("/api/stocks/history")
 def get_price_history():
     symbol = request.args.get("symbol", "").upper()
     try:
         verify_token(request)
 
-        # Get today's date and 30 days ago
-        end_timestamp = int(time.time())  # current UTC timestamp (seconds)
-        start_timestamp = end_timestamp - (30 * 24 * 60 * 60)  # 30 days ago
+        headers = {
+            "Content-Type": "application/json"
+        }
+        url = f"https://api.tiingo.com/tiingo/daily/{symbol}/prices"
+        params = {
+            "token": TIINGO_API_KEY,
+            "startDate": "2024-12-01",
+            "resampleFreq": "daily"
+        }
 
-        end_date = time.strftime('%Y-%m-%d', time.gmtime(end_timestamp))
-        start_date = time.strftime('%Y-%m-%d', time.gmtime(start_timestamp))
+        response = requests.get(url, headers=headers, params=params)
+        data = response.json()
 
-        # Fetch data from Polygon
-        resp = polygon_client.get_aggs(
-            ticker=symbol,
-            multiplier=1,
-            timespan="day",
-            from_=start_date,
-            to=end_date,
-            limit=30
-        )
+        if not isinstance(data, list) or not data:
+            return jsonify({"error": "No data returned or symbol not found"}), 404
 
-        if not resp or not resp.results:
-            return jsonify({"error": "Symbol not found or no data"}), 404
-
-        history = []
-        for record in resp.results:
-            history.append({
-                "date": time.strftime('%Y-%m-%d', time.gmtime(record['t'] / 1000)),
-                "price": round(record['c'], 2)
-            })
-
+        history = [
+            {"date": item["date"][:10], "price": round(item["close"], 2)}
+            for item in data
+        ]
         return jsonify(history)
 
     except Exception as e:
         print("Error in get_price_history:", str(e))
-        return jsonify({"error": "Failed to fetch price history", "details": str(e)}), 401
+        return jsonify({"error": "Unauthorized", "message": str(e)}), 401
+
 
 @app.route("/api/portfolio", methods=["GET", "POST"])
 def portfolio():
