@@ -145,7 +145,7 @@ def search_stock():
         response = requests.get(url, headers=headers, params=params)
         if response.status_code != 200:
             print("Tiingo API Error:", response.text)
-            return jsonify({"error": "Failed to retrieve data"}), 500
+            return jsonify({"search_stock error": "Failed to retrieve data"}), 500
 
         data = response.json()
         if not isinstance(data, list) or not data:
