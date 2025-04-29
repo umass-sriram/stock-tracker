@@ -24,6 +24,15 @@ COGNITO_ISSUER = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{USER_POOL
 JWKS_URL = f"{COGNITO_ISSUER}/.well-known/jwks.json"
 JWKS = requests.get(JWKS_URL).json()
 
+# Initialize SSM client
+ssm_client = boto3.client('ssm', region_name="us-east-1")  # Set correct region
+
+def get_symbols_from_ssm():
+    response = ssm_client.get_parameter(Name='/stocktracker/symbols')
+    symbols_string = response['Parameter']['Value']
+    symbols_list = [s.strip() for s in symbols_string.split(',')]
+    return symbols_list
+    
 def get_secret(secret_name):
     session = boto3.session.Session()
     client = session.client(service_name='secretsmanager', region_name='us-east-1')
@@ -73,7 +82,7 @@ def get_stocks():
         print("Fetching stocks...")
         verify_token(request)
 
-        symbols = ["AAPL", "GOOGL", "TSLA", "MSFT", "AMZN", "NVDA"]
+        symbols = get_symbols_from_ssm()
 
         result = {}
 
