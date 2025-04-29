@@ -5,6 +5,7 @@ from flask_cors import CORS
 import os
 from polygon import RESTClient
 from datetime import datetime, timedelta
+import time
 import boto3
 from boto3.dynamodb.conditions import Key
 
