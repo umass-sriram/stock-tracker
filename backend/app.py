@@ -22,7 +22,20 @@ COGNITO_ISSUER = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{USER_POOL
 JWKS_URL = f"{COGNITO_ISSUER}/.well-known/jwks.json"
 JWKS = requests.get(JWKS_URL).json()
 
-POLYGON_API_KEY = "c_Nc9wSU9dr4DshD0xegTNpliM4y7L1c"
+def get_secret(secret_name):
+    session = boto3.session.Session()
+    client = session.client(service_name='secretsmanager', region_name='us-east-1')
+
+    try:
+        response = client.get_secret_value(SecretId=secret_name)
+        secret = response['SecretString']
+        return json.loads(secret)
+    except Exception as e:
+        print(f"Error fetching secret {secret_name}: {e}")
+        raise e
+
+secrets = get_secret("stock-tracker/polygon-api-key")
+POLYGON_API_KEY = secrets["POLYGON_API_KEY"]
 polygon_client = RESTClient(POLYGON_API_KEY)
 POLYGON_BASE_URL = "https://api.polygon.io"
 
