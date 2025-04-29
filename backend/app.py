@@ -23,6 +23,7 @@ JWKS = requests.get(JWKS_URL).json()
 
 POLYGON_API_KEY = "c_Nc9wSU9dr4DshD0xegTNpliM4y7L1c"
 polygon_client = RESTClient(POLYGON_API_KEY)
+POLYGON_BASE_URL = "https://api.polygon.io"
 
 def get_public_key(token):
     headers = jwt.get_unverified_header(token)
@@ -96,36 +97,20 @@ def search_stock():
     print("Searching stock:", symbol)
     try:
         verify_token(request)
-
-        end_date = datetime.today().date()
+        
+        end_date = datetime.now().date()
         start_date = end_date - timedelta(days=5)
+        
+        url = f"{POLYGON_BASE_URL}/v2/aggs/ticker/{symbol}/range/1/day/{start_date}/{end_date}?limit=5&apiKey={POLYGON_API_KEY}"
+        response = requests.get(url)
+        data = response.json()
 
-        aggs = polygon_client.get_aggs(
-            ticker=symbol,
-            multiplier=1,
-            timespan="day",
-            from_=str(start_date),
-            to=str(end_date),
-            limit=5
-        )
-
-        if aggs:
-            last_candle = aggs[-1]
-            current_price = round(last_candle.close, 2)
-
-            if len(aggs) > 1:
-                prev_close = aggs[-2].close
-                change = round(((current_price - prev_close) / prev_close) * 100, 2)
-            else:
-                change = 0.0
-
-            return jsonify({
-                "symbol": symbol,
-                "price": current_price,
-                "change": change
-            })
-        else:
+        if response.status_code != 200 or "results" not in data:
+            print(f"Polygon error: {data}")
             return jsonify({"error": "Symbol not found"}), 404
+
+        last_price = data["results"][-1]["c"]
+        return jsonify({"symbol": symbol, "price": round(last_price, 2)})
 
     except Exception as e:
         print("Error in search_stock:", str(e))
