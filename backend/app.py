@@ -138,17 +138,37 @@ def get_price_history():
     symbol = request.args.get("symbol", "").upper()
     try:
         verify_token(request)
-        stock = yf.Ticker(symbol)
-        hist = stock.history(period="1mo")
-        if hist.empty:
-            return jsonify({"error": "Symbol not found"}), 404
-        history = [
-            {"date": idx.strftime("%Y-%m-%d"), "price": round(row["Close"], 2)}
-            for idx, row in hist.iterrows()
-        ]
+
+        # Calculate date range for past 1 month
+        end_date = dt.datetime.utcnow().date()
+        start_date = end_date - dt.timedelta(days=30)
+
+        # Fetch from Polygon API
+        resp = polygon_client.get_aggs(
+            ticker=symbol,
+            multiplier=1,
+            timespan="day",
+            from_=start_date.isoformat(),
+            to=end_date.isoformat(),
+            limit=30
+        )
+
+        if not resp or not resp.results:
+            return jsonify({"error": "Symbol not found or no data"}), 404
+
+        # Prepare history data
+        history = []
+        for record in resp.results:
+            history.append({
+                "date": dt.datetime.utcfromtimestamp(record['t'] / 1000).strftime("%Y-%m-%d"),
+                "price": round(record['c'], 2)  # Closing price
+            })
+
         return jsonify(history)
+
     except Exception as e:
-        return jsonify({"error": "Unauthorized", "message": str(e)}), 401
+        print("Error in get_price_history:", str(e))
+        return jsonify({"error": "Failed to fetch price history", "details": str(e)}), 401
 
 @app.route("/api/portfolio", methods=["GET", "POST"])
 def portfolio():
